@@ -26,9 +26,11 @@ chmod +x ./build.sh
 ./build.sh \
     -f docker/Dockerfile-primary \
     -t mpaper-primary:latest \
-    -b xxx \
-    -m x.xx.x
+    -b <MULTIPAPER BUILD VERSION> \
+    -m <MULTIPAPER MINECRAFT VERSION>
 ```
+
+> You can see available minecraft versions as well as multipaper build version in the [download](https://multipaper.io/download.html) section at multipaper.io.
 
 To load the images into local Kind cluster, run:
 
@@ -36,4 +38,4 @@ To load the images into local Kind cluster, run:
 kind load docker-image <IMAGE_TAG> -n <YOUR_KIND_CLUSTER_NAME>
 ```
 
-> If you're using `latest` tag, remember to set `imagePullPolicy` to `Never` or `IFNotPresent` in your Pod manifest, otherwise Kubernetes always tries to pull the image from Docker Hub repository.
+> If you're using `latest` tag, remember to set `imagePullPolicy` to `Never` or `IfNotPresent` in your Pod manifest, otherwise Kubernetes always tries to pull the image from Docker Hub repository.

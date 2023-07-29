@@ -11,11 +11,11 @@ while getopts 'f:t:b:m:h' opt; do
       ;;
 
     b)
-      MPAPER_BUILD_VERSION="$OPTARG"
+      MULTIPAPER_BUILD_VERSION="$OPTARG"
       ;;
     
     m)
-      MPAPER_MINECRAFT_VERSION="$OPTARG"
+      MULTIPAPER_MC_VERSION="$OPTARG"
       ;;
    
     ?|h)
@@ -26,4 +26,4 @@ while getopts 'f:t:b:m:h' opt; do
 done
 shift "$(($OPTIND -1))"
 
-docker build -f $DOCKERFILE_PATH -t $IMAGE_TAG --build-arg MPAPER_MC_VER=$MPAPER_MINECRAFT_VERSION --build-arg MPAPER_BUID_VER=$MPAPER_BUILD_VERSION .
+docker build -f $DOCKERFILE_PATH -t $IMAGE_TAG --build-arg MULTIPAPER_MC_VERSION=$MULTIPAPER_MC_VERSION --build-arg MULTIPAPER_BUILD_VERSION=$MULTIPAPER_BUILD_VERSION .
