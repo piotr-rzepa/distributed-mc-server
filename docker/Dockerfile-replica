@@ -2,13 +2,13 @@ FROM amazoncorretto:17-al2023-jdk
 
 EXPOSE 25565
 
-ARG MPAPER_MC_VER
+ARG MULTIPAPER_MC_VERSION
 
-ARG MPAPER_BUID_VER
+ARG MULTIPAPER_BUILD_VERSION
 
 WORKDIR /minecraft
 
-ADD https://multipaper.io/api/v2/projects/multipaper/versions/${MPAPER_MC_VER}/builds/${MPAPER_BUID_VER}/downloads/multipaper-${MPAPER_MC_VER}-${MPAPER_BUID_VER}.jar replica.jar
+ADD https://multipaper.io/api/v2/projects/multipaper/versions/${MULTIPAPER_MC_VERSION}/builds/${MULTIPAPER_BUILD_VERSION}/downloads/multipaper-${MULTIPAPER_MC_VERSION}-${MULTIPAPER_BUILD_VERSION}.jar replica.jar
 
 ENTRYPOINT [ "java" ]
 
