@@ -1,0 +1,92 @@
+# Default values for multipaper.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+master:
+  nameOverride: "" # Name of the master server and all its related resources.
+  fullnameOverride: "" # Fully qualified name of master server and all its related resources. Do not exceeds 63 characters.
+  image:
+    repository: multipaper-master # Name of the repository to pull the images from
+    pullPolicy: IfNotPresent # Instructs the kubelet how to act should act during the image pull
+    tag: latest # Tag to use for pulled image
+  replicaCount: 1 # Number of replicas for master server
+  imagePullSecrets: [] # Authorization token(s) to use by Docker when pulling image from a private container registry
+  resources: {} # Maximum and requested amount of CPU or Memory (or both) which can be requested, allocated and consumed by a Pod
+  nodeSelector: {} # Options to constrain Pods to nodes with specific labels
+  tolerations: [] # Options applied to pods to allow them to be scheduled with matching taints
+  affinity: {} # Options to constrain Pods to nodes with specific labels, with more control over the selection logic than nodeSelector
+  podAnnotations: {} # Arbitrary non-identifying metadata attached to objects
+  podSecurityContext: {} # Defines privilege and access control settings for a Pod
+  securityContext: {} # Defines privilege and access control settings for a Container
+  service:
+    enabled: true # Create Service for master server(s)
+    type: ClusterIP # Service type
+    port: 35353 # Service port, which should equal the target port on the Pod
+
+worker:
+  nameOverride: ""
+  fullnameOverride: ""
+  image:
+    repository: multipaper-worker # Name of the repository to pull the images from
+    pullPolicy: IfNotPresent # Instructs the kubelet how to act should act during the image pull
+    tag: latest # Tag to use for pulled image
+    args: # Additional arguments passed to the Pod's command
+      - "-Xmx1024M"
+      - "-Xms1024M"
+      - "-jar"
+      - "worker.jar"
+      - "nogui"
+  replicaCount: 2 # Number of replicas for worker server. Each worker is assigned a unique identifier in multipaper.yaml via init container processing
+  imagePullSecrets: [] # Authorization token(s) to use by Docker when pulling image from a private container registry
+  resources:
+    {} # Maximum and requested amount of CPU or Memory (or both) which can be requested, allocated and consumed by a Pod
+    # limits:
+    #   memory: 2048Mi
+    #   cpu: 1000m
+    # requests:
+    #   memory: 2048Mi
+    #   cpu: 1000m
+  nodeSelector: {} # Options to constrain Pods to nodes with specific labels
+  tolerations: [] # Options applied to pods to allow them to be scheduled with matching taints
+  affinity: {} # Options to constrain Pods to nodes with specific labels, with more control over the selection logic than nodeSelector
+  podAnnotations: {} # Arbitrary non-identifying metadata attached to objects
+  podSecurityContext: {} # Defines privilege and access control settings for a Pod
+  securityContext: {} # Defines privilege and access control settings for a Container
+  service:
+    enabled: true # Create Service for worker server(s)
+    type: ClusterIP # Service type
+    port: 25565 # Service port, which should equal the target port on the Pod
+  eula: true
+  multipaperProperties:
+    advertise_to_built_in_proxy: false
+    files_to_not_sync:
+      - plugins/bStats
+    files_to_only_upload_on_server_stop:
+      - plugins/MyPluginDirectory/my_big_database.db
+    files_to_sync_in_real_time:
+      - plugins/MyPluginDirectory/userdata
+    files_to_sync_on_startup:
+      - myconfigfile.yml
+      - plugins/MyPlugin.jar
+    log_file_syncs: true
+    sync_entity_ids: true
+    sync_json_files: true
+    sync_permissions: false
+    sync_scoreboards: true
+
+  serverProperties:
+    level_name: helm-world
+    motd: A Minecraft Server
+    max_players: 2
+    pvp: true
+    enfore_secure_profile: true
+    generate_structure: true
+    use_native_transport: true
+    enable_status: true
+    broadcast_rcon_to_ops: true
+    allow_nether: true
+    sync_chunk_writes: true
+    spawn_npcs: true
+    broadcast_console_to_ops: true
+    spawn_animals: true
+    spawn_monsters: true

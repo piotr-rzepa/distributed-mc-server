@@ -2,13 +2,13 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: multipaper-replica
+  name: multipaper-worker
   namespace: minecraft
 data:
   multipaper.yml: |
     master-connection:
       advertise-to-built-in-proxy: false
-      master-address: multipaper-primary:8080
+      master-address: multipaper-master:8080
       my-name: server-01
     optimizations:
       dont-save-just-for-lighting-updates: false
@@ -95,16 +95,15 @@ data:
     resource-pack-sha1=
     max-world-size=29999984
     verify-names=false
-
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: multipaper-replica
+  name: multipaper-worker
   namespace: minecraft
 spec:
   selector:
-    instance: replica
+    instance: worker
   ports:
     - protocol: TCP
       port: 8080
@@ -114,28 +113,28 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: multipaper-replica
+  name: multipaper-worker
   namespace: minecraft
 spec:
   replicas: 3
   selector:
     matchLabels:
-      name: multipaper-replica
-      instance: replica
+      name: multipaper-worker
+      instance: worker
   template:
     metadata:
       labels:
-        name: multipaper-replica
-        instance: replica
+        name: multipaper-worker
+        instance: worker
     spec:
       containers:
-        - name: multipaper-replica
-          image: multipaper-replica:latest
+        - name: multipaper-worker
+          image: multipaper-worker:latest
           args:
             - "-Xmx1024M"
             - "-Xms1024M"
             - "-jar"
-            - "replica.jar"
+            - "worker.jar"
             - "nogui"
           imagePullPolicy: Never
           resources:
@@ -160,10 +159,10 @@ spec:
       volumes:
         - name: multipaper
           configMap:
-            name: multipaper-replica
+            name: multipaper-worker
         - name: eula
           configMap:
-            name: multipaper-replica
+            name: multipaper-worker
         - name: properties
           configMap:
-            name: multipaper-replica
+            name: multipaper-worker

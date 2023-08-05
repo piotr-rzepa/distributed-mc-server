@@ -1,0 +1,36 @@
+master-connection:
+  advertise-to-built-in-proxy: {{ default "false" .Values.worker.multipaperProperties.advertise_to_built_in_proxy }}
+  master-address: {{ include "multipaper.master.fullname" . }}:{{ .Values.master.service.port }}
+  my-name: server-{{ randAlphaNum 8 }}
+optimizations:
+  dont-save-just-for-lighting-updates: {{ default "false" .Values.worker.multipaperProperties.dont_save_just_for_lighting_updates }}
+  reduce-player-position-updates-in-unloaded-chunks: {{ default "false" .Values.worker.multipaperProperties.reduce_player_position_updates_in_unloaded_chunks }}
+  ticks-per-inactive-entity-tracking: {{ default "1" .Values.worker.multipaperProperties.ticks_per_inactive_entity_tracking }}
+  use-event-based-io: {{ default "true" .Values.worker.multipaperProperties.use_event_based_io }}
+peer-connection:
+  compression-threshold: {{ default "0" .Values.worker.multipaperProperties.compression_threshold }}
+  consolidation-delay: {{ default "0" .Values.worker.multipaperProperties.consolidation_delay }}
+sync-settings:
+  files:
+    {{- with .Values.worker.multipaperProperties.files_to_not_sync }}
+    files-to-not-sync:
+      {{- toYaml . | nindent 6 }}
+    {{- end }}
+    {{- with .Values.worker.multipaperProperties.files_to_only_upload_on_server_stop }}
+    files-to-only-upload-on-server-stop:
+      {{- toYaml . | nindent 6 }}
+    {{- end }}
+    {{- with .Values.worker.multipaperProperties.files_to_sync_in_real_time }}
+    files-to-sync-in-real-time:
+      {{- toYaml . | nindent 6 }}
+    {{- end }}
+    {{- with .Values.worker.multipaperProperties.files_to_sync_on_startup }}
+    files-to-sync-on-startup:
+      {{- toYaml . | nindent 6 }}
+    {{- end }}
+    log-file-syncs: {{ default "true" .Values.worker.multipaperProperties.log_file_syncs }}
+  sync-entity-ids: {{ default "true" .Values.worker.multipaperProperties.sync_entity_ids }}
+  sync-json-files: {{ default "true" .Values.worker.multipaperProperties.sync_json_files }}
+  sync-permissions: {{ default "false" .Values.worker.multipaperProperties.sync_permissions }}
+  sync-scoreboards: {{ default "true" .Values.worker.multipaperProperties.sync_scoreboards }}
+  use-local-player-count-for-server-is-full-kick: {{ default "false" .Values.worker.multipaperProperties.use_local_player_count_for_server_is_full_kick }}
