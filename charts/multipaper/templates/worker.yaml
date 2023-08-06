@@ -1,0 +1,136 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "multipaper.worker.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+data:
+{{ tpl ((.Files.Glob "config/*").AsConfig) . | indent 2 }}
+  eula.txt:
+    eula={{ .Values.worker.eula }}
+---
+{{- if .Values.worker.service.enabled -}}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "multipaper.worker.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "multipaper.worker.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.worker.service.type }}
+  ports:
+    - port: {{ .Values.worker.service.port }}
+      targetPort: {{ .Values.worker.service.port }}
+  selector:
+    {{- include "multipaper.selectorLabels.worker" . | nindent 4 }}
+---
+{{- end -}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "multipaper.worker.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "multipaper.worker.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.worker.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "multipaper.selectorLabels.worker" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.worker.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "multipaper.selectorLabels.worker" . | nindent 8 }}
+    spec:
+      {{- with .Values.worker.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      securityContext:
+        {{- toYaml .Values.worker.podSecurityContext | nindent 8 }}
+      initContainers:
+        - name: init-{{ include "multipaper.worker.name" . }}
+          image: ubuntu:latest
+          command:
+            - bash
+            - "-c"
+            - |
+              # Copy files to the config, which will be shared between init and actual container
+              echo "Copying /work-dir/server.properties to /opt/init-properties/server.properties..."
+              cp -r /work-dir/server.properties /opt/init-properties/server.properties
+
+              echo "Copying /work-dir/multipaper.yml to /opt/init-multipaper/multipaper.yml..."
+              cp -r /work-dir/multipaper.yml /opt/init-multipaper/multipaper.yml
+
+              echo "Setting server-ip=$(hostname -i) in /opt/init-properties/server.properties..."
+              # Set server ip in server.properties based on hostname
+              # sed -i "s/server-ip=.*/server-ip=$(hostname -I)/gi" /opt/init-properties/server.properties
+
+              RANDOM_SERVER_SUFFIX=$(echo $RANDOM | md5sum | head -c 8 | tr '[:upper:]' '[:lower]')
+              echo "Generating unique server id suffix: server-$RANDOM_SERVER_SUFFIX in opt/init-multipaper/multipaper.yml..."
+              # Generate unique server id for each replica
+              sed -i "s/my-name:.\+/my-name: server-$RANDOM_SERVER_SUFFIX/gi" /opt/init-multipaper/multipaper.yml
+
+              echo "Initizalition script done..."
+
+          volumeMounts:
+            - name: multipaper
+              mountPath: "/work-dir/multipaper.yml"
+              subPath: multipaper.yml
+            - name: multipaper
+              mountPath: "/work-dir/server.properties"
+              subPath: server.properties
+            - name: processed-server-properties
+              mountPath: "/opt/init-properties"
+            - name: processed-multi-paper
+              mountPath: "/opt/init-multipaper"
+
+      containers:
+        - name: {{ include "multipaper.worker.name" . }}
+          image: "{{ .Values.worker.image.repository }}:{{ .Values.worker.image.tag | default .Chart.AppVersion }}"
+          securityContext:
+            {{- toYaml .Values.worker.securityContext | nindent 12 }}
+          imagePullPolicy: {{ .Values.worker.image.pullPolicy }}
+          {{- with .Values.worker.image.args }}
+          args:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          ports:
+            - containerPort: {{ .Values.worker.service.port }}
+          resources:
+            {{- toYaml .Values.worker.resources | nindent 12 }}
+          volumeMounts:
+            - name: multipaper
+              mountPath: "/minecraft/eula.txt"
+              subPath: eula.txt
+            - name: processed-multi-paper
+              mountPath: "/minecraft/multipaper.yml"
+              subPath: multipaper.yml
+            - name: processed-server-properties
+              mountPath: "/minecraft/server.properties"
+              subPath: server.properties
+      volumes:
+        - name: multipaper
+          configMap:
+            name: {{ include "multipaper.worker.fullname" . }}
+        - name: processed-server-properties
+          emptyDir: {}
+        - name: processed-multi-paper
+          emptyDir: {}
+      {{- with .Values.worker.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.worker.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.worker.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
