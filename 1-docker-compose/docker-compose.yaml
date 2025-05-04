@@ -1,0 +1,47 @@
+name: multipaper
+
+services:
+  master:
+    container_name: multipaper-master
+    build:
+      context: .
+      dockerfile: ../docker/master.dockerfile
+      args:
+        MULTIPAPER_MC_VERSION: "1.20.1"
+        MULTIPAPER_BUILD_NUMBER: "57"
+        MULTIPAPER_MASTER_VERSION: "2.12.3"
+
+  server1:
+    container_name: multipaper-server-1
+    build:
+      context: .
+      dockerfile: ../docker/server.dockerfile
+      args:
+        MULTIPAPER_MC_VERSION: "1.20.1"
+        MULTIPAPER_BUILD_NUMBER: "57"
+    ports:
+      - "8080:25565"
+    volumes:
+      - type: bind
+        source: ./config/server.properties
+        target: /minecraft/server.properties
+        read_only: true
+      - type: bind
+        source: ./config/eula.txt
+        target: /minecraft/eula.txt
+        read_only: true
+      - type: bind
+        # MultiPaper's server loads the config into memory (?) and then tries to overwrite the multipaper.yml using `mv` command,
+        # which fails with error "Resource busy"
+        # To mitigate it, we mount the config to other dir and copy it to the working dir
+        source: ./config/multipaper.yml
+        target: /etc/multipaper/multipaper.yml
+        read_only: true
+    post_start:
+      - command: cp /etc/multipaper/multipaper.yml /minecraft/multipaper.yml
+        user: root
+        privileged: true
+networks:
+  ip6net:
+    enable_ipv4: true
+    enable_ipv6: false
