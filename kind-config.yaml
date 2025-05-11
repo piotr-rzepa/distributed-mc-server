@@ -1,10 +1,17 @@
 # three node (two workers) cluster config
 kind: Cluster
 apiVersion: kind.x-k8s.io/v1alpha4
+name: mc
 nodes:
   - role: control-plane
-    image: kindest/node:v1.27.2@sha256:3966ac761ae0136263ffdb6cfd4db23ef8a83cba8a463690e98317add2c9ba72
+    image: kindest/node:v1.33.0@sha256:02f73d6ae3f11ad5d543f16736a2cb2a63a300ad60e81dac22099b0b04784a4e
   - role: worker
-    image: kindest/node:v1.27.2@sha256:3966ac761ae0136263ffdb6cfd4db23ef8a83cba8a463690e98317add2c9ba72
+    image: kindest/node:v1.33.0@sha256:02f73d6ae3f11ad5d543f16736a2cb2a63a300ad60e81dac22099b0b04784a4e
+    extraPortMappings:
+      - containerPort: 30950
+        hostPort: 8080
   - role: worker
-    image: kindest/node:v1.27.2@sha256:3966ac761ae0136263ffdb6cfd4db23ef8a83cba8a463690e98317add2c9ba72
+    image: kindest/node:v1.33.0@sha256:02f73d6ae3f11ad5d543f16736a2cb2a63a300ad60e81dac22099b0b04784a4e
+    extraPortMappings:
+      - containerPort: 30950
+        hostPort: 8081

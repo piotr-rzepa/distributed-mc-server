@@ -1,0 +1,29 @@
+master-connection:
+  advertise-to-built-in-proxy: false
+  master-address: multipaper-master:35353
+  my-name: server-01
+optimizations:
+  dont-save-just-for-lighting-updates: false
+  reduce-player-position-updates-in-unloaded-chunks: false
+  ticks-per-inactive-entity-tracking: 1
+  use-event-based-io: true
+peer-connection:
+  compression-threshold: 0
+  consolidation-delay: 0
+sync-settings:
+  files:
+    files-to-not-sync:
+      - plugins/bStats
+    files-to-only-upload-on-server-stop:
+      - plugins/MyPluginDirectory/my_big_database.db
+    files-to-sync-in-real-time:
+      - plugins/MyPluginDirectory/userdata
+    files-to-sync-on-startup:
+      - myconfigfile.yml
+      - plugins/MyPlugin.jar
+    log-file-syncs: true
+  sync-entity-ids: true
+  sync-json-files: true
+  sync-permissions: false
+  sync-scoreboards: true
+  use-local-player-count-for-server-is-full-kick: false

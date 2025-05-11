@@ -2,13 +2,13 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: multipaper-replica
+  name: multipaper-server-config
   namespace: minecraft
 data:
   multipaper.yml: |
     master-connection:
       advertise-to-built-in-proxy: false
-      master-address: multipaper-primary:8080
+      master-address: multipaper-master.minecraft.svc.cluster.local:8080
       my-name: server-01
     optimizations:
       dont-save-just-for-lighting-updates: false
@@ -95,75 +95,105 @@ data:
     resource-pack-sha1=
     max-world-size=29999984
     verify-names=false
-
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: multipaper-replica
+  name: multipaper-server
   namespace: minecraft
 spec:
   selector:
-    instance: replica
+    instance: server
+  type: NodePort
   ports:
-    - protocol: TCP
+    - name: server-tcp
+      protocol: TCP
       port: 8080
+      nodePort: 30950
       targetPort: 25565
 
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: multipaper-replica
+  name: multipaper-server
   namespace: minecraft
 spec:
-  replicas: 3
+  replicas: 1
   selector:
     matchLabels:
-      name: multipaper-replica
-      instance: replica
+      name: multipaper-server
+      instance: server
   template:
     metadata:
       labels:
-        name: multipaper-replica
-        instance: replica
+        name: multipaper-server
+        instance: server
     spec:
+      initContainers:
+        - name: init-master-ready
+          image: busybox:1.28
+          env:
+            - name: MULTIPAPER_MASTER_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: MULTIPAPER_MASTER_NAME
+              value: multipaper-master
+          command:
+            [
+              "sh",
+              "-c",
+              "until nslookup $MULTIPAPER_MASTER_NAME.$MULTIPAPER_MASTER_NAMESPACE.svc.cluster.local; do echo waiting for Multipaper master to be ready...; sleep 1; done",
+            ]
       containers:
-        - name: multipaper-replica
-          image: multipaper-replica:latest
+        - name: mpserver
+          image: multipaper/server:latest
+          lifecycle:
+            postStart:
+              exec:
+                command:
+                  [
+                    "/bin/sh",
+                    "-c",
+                    "cp /etc/multipaper/multipaper.yml /minecraft/multipaper.yml",
+                  ]
           args:
             - "-Xmx1024M"
             - "-Xms1024M"
             - "-jar"
-            - "replica.jar"
+            - "server.jar"
             - "nogui"
           imagePullPolicy: Never
           resources:
             limits:
               memory: 2048Mi
-              cpu: 1000m
+              cpu: 500m
             requests:
-              memory: 2048Mi
-              cpu: 1000m
+              memory: 1024Mi
+              cpu: 250m
           ports:
             - containerPort: 25565
           volumeMounts:
+            # FIXME: Multipaper's server config loader tries to mv/rename the multipaper yaml config
+            # It fails due to the "resource busy" error - you can't move the mountpoint
+            # Potential solution - mount file to other directory and copy them in the init container to the working dir
             - name: multipaper
-              mountPath: "/minecraft/multipaper.yml"
+              mountPath: /etc/multipaper/multipaper.yml
               subPath: multipaper.yml
             - name: eula
-              mountPath: "/minecraft/eula.txt"
+              mountPath: /minecraft/eula.txt
               subPath: eula.txt
             - name: properties
-              mountPath: "/minecraft/server.properties"
+              mountPath: /minecraft/server.properties
               subPath: server.properties
       volumes:
         - name: multipaper
           configMap:
-            name: multipaper-replica
+            name: multipaper-server-config
         - name: eula
           configMap:
-            name: multipaper-replica
+            name: multipaper-server-config
         - name: properties
           configMap:
-            name: multipaper-replica
+            name: multipaper-server-config
